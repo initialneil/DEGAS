@@ -1,5 +1,5 @@
 # DEGAS: Detailed Expressions on Full-Body Gaussian Avatars
-## [Paper]() | [Video Youtube]() | [Project Page](https://initialneil.github.io/DEGAS)
+## [Paper(arXiv:2408.10588)](https://arxiv.org/abs/2408.10588) | [Video Youtube]() | [Project Page](https://initialneil.github.io/DEGAS)
 
 <!-- Official Repository for CVPR 2024 paper [*SplattingAvatar: Realistic Real-Time Human Avatars with Mesh-Embedded Gaussian Splatting*](https://cvpr.thecvf.com/Conferences/2024/AcceptedPapers).  -->
 
@@ -12,23 +12,30 @@
 <img src="assets/Framework.PNG" width="800"/> 
 
 
-<!-- ## Citation
+## Citation
 If you find our code or paper useful, please cite as:
 ```
-@inproceedings{SplattingAvatar:CVPR2024,
-  title = {{SplattingAvatar: Realistic Real-Time Human Avatars with Mesh-Embedded Gaussian Splatting}},
-  author = {Shao, Zhijing and Wang, Zhaolong and Li, Zhuang and Wang, Duotun and Lin, Xiangru and Zhang, Yu and Fan, Mingming and Wang, Zeyu},
-  booktitle = {Computer Vision and Pattern Recognition (CVPR)},
-  year = {2024}
+@misc{shao2024degas,
+  title={DEGAS: Detailed Expressions on Full-Body Gaussian Avatars}, 
+  author={Zhijing Shao and Duotun Wang and Qing-Yao Tian and Yao-Dong Yang and Hengyu Meng and Zeyu Cai and Bo Dong and Yu Zhang and Kang Zhang and Zeyu Wang},
+  year={2024},
+  eprint={2408.10588},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2408.10588}, 
 }
-``` -->
+```
 
-<!-- ## Acknowledgement
+## Acknowledgement
 We thank the following authors for their excellent works!
 - [instant-nsr-pl](https://github.com/bennyguo/instant-nsr-pl)
 - [Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting)
-- [IMavatar](https://github.com/zhengyuf/IMavatar)
-- [INSTA](https://github.com/Zielon/INSTA) -->
+- [CABody](https://github.com/facebookresearch/ca_body)
+- [AnimatableGaussians](https://github.com/lizhe00/AnimatableGaussians)
+- [DECA](https://github.com/yfeng95/DECA)
+- [DAD-3DHeads](https://github.com/PinataFarms/DAD-3DHeads)
+- [Deep3DFaceRecon](https://github.com/sicxu/Deep3DFaceRecon_pytorch)
+- [EasyMocap](https://github.com/zju3dv/EasyMocap)
 
 ## License
 DEGAS
