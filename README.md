@@ -19,7 +19,7 @@
 | Training / evaluation code | this repo | available |
 | Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | P1 available, P2/P3/P4 uploading as they finish |
 | DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures, SMPL-X **and** DPE codes for all of them |
-| Multiview SMPL-X registration | [Holistic-Multiview-Tracker](https://github.com/initialneil/Holistic-Multiview-Tracker) | available |
+| Multiview SMPL-X registration | Holistic-Multiview-Tracker | **release pending** |
 
 - [Setup](#setup)
 - [Quick inference](#quick-inference-with-pretrained-avatars)
@@ -212,10 +212,13 @@ one process; `degas_eval.py` scores a run on a held-out split.
 ### 1. Multiview capture to SMPL-X
 
 DEGAS drives everything from a registered SMPL-X sequence, so the first step is fitting
-SMPL-X to your multiview capture. Use
-**[Holistic-Multiview-Tracker](https://github.com/initialneil/Holistic-Multiview-Tracker)**,
-which is what produced DREAMS-AVATAR: it fits body, hands and face jointly from dense
+SMPL-X to your multiview capture. DREAMS-AVATAR's registration was produced by
+**Holistic-Multiview-Tracker**, which fits body, hands and face jointly from dense
 multiview landmarks and writes the per-frame SMPL-X parameters this repo consumes.
+**That tracker is not released yet**, so for now this step is yours to supply: any fitter
+that produces per-frame SMPL-X in the DREAMS-AVATAR convention will work, and the dataset
+card documents that convention precisely. If you only want to *train on* DREAMS-AVATAR, you
+do not need a fitter at all, the registration ships with the data.
 
 Arrange the result as a DREAMS-AVATAR capture (`cameras.json`, `capture.json`,
 `smplx.npz`, `videos/camNN.mp4`) and `frameset_type: dreams` reads it directly.
