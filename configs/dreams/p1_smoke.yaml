@@ -1,0 +1,34 @@
+# Tiny DREAMS smoke run: does DEGAS train end to end on this data at all?
+# 6 cameras x 58 frames, so the decode cache is ~700 images and builds in a couple of
+# minutes. NOT a real training recipe -- use p1_dreams.yaml for that.
+#
+#   CUDA_VISIBLE_DEVICES=5 python degas_train.py \
+#     --dat_dir .../data/P1C1 --ip none --no-is_continue \
+#     --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_smoke.yaml \
+#     --model_path /scratch/degas_smoke optim.total_iteration=400
+#
+# Config order matters: OmegaConf.merge is last-wins, so the dataset config goes LAST or
+# degas_config.yaml's `frameset_type: color_frames` silently wins.
+dataset:
+  dat_dir: ???
+  frameset_type: dreams
+  scale: 2x
+  resolution: 1
+  cameras_extent: 2.0
+  # cache_dir defaults to <dat_dir>/_degas_cache. Point it at a fast scratch disk if the
+  # capture lives on slow/network storage -- 8 cams x ~1.8k frames at 2x is tens of GB.
+  # cache_dir: /scratch/dreams_cache/P1C1
+  cache_workers: 6
+
+  train:
+    frm_list: np.arange(0, 1836, 32).tolist()
+    cam_select: [0, 4, 8, 12, 16, 20]
+    mini_batch: 1
+
+  val:
+    frm_list: [896]
+    cam_select: [24]
+
+  test:
+    frm_list: np.arange(0, 1836, 512).tolist()
+    cam_select: [24]

@@ -1,0 +1,28 @@
+# ===== ARM A: DEGAS default, paper-faithful =====
+# SMPL-X expression and jaw are ZEROED; the face is meant to be driven by a separate
+# per-frame DPE code through the VAE decoder's n_face_embs branch.
+#
+# READ THIS BEFORE INTERPRETING THE RESULT: DREAMS-AVATAR ships no DPE codes, so
+# `with_face_dpe` is unset, `batch['exp_code']` never exists, and
+# degas_vae_driver.py:379-381 substitutes a CONSTANT ZERO face embedding. Arm A therefore
+# has *no facial signal at all* -- its face is static by construction. That is the honest
+# baseline for this dataset, not a bug, but it means A-vs-B measures "fitted expression vs
+# nothing", not "fitted expression vs DPE".
+#
+# These three values are already degas_config.yaml's defaults; they are restated here so
+# the arm is self-documenting and cannot be changed by editing the shared base.
+dataset:
+  smplx_nofacial: exp+jaw
+
+model:
+  smplx_nofacial: exp+jaw
+
+optim:
+  smplx_optim:
+    # NOTE: in SMPLXOptimizer, `optim_skip` does NOT mean "freeze at the fitted value".
+    # setup_smplx_params_list allocates a zero tensor for every key and then fills only
+    # `params_keys`; skipped keys stay in `forward_keys` but are never filled, so they are
+    # forced to ZERO for the whole run. Here that is exactly the intent.
+    optim_skip:
+      - expression
+      - jaw_pose

@@ -1,0 +1,39 @@
+# DREAMS-AVATAR P1C1, read NATIVELY (no conversion): frameset_type: dreams
+#
+#   python degas_train.py --dat_dir /path/to/DREAMS-AVATAR/data/P1C1 \
+#       --configs configs/dreams/p1_dreams.yaml,configs/degas_config.yaml,configs/degas_vae_driver.yaml
+#
+# cam_select is 0-BASED here (cam00..cam31 == videos/camNN.mp4). The ActorsHQ path is
+# 1-based instead, because ActorsHQ names its cameras Cam001..Cam160.
+#
+# The first run decodes the mp4s for the (camera, frame) pairs below into
+# <dat_dir>/_degas_cache/<scale>/; later runs reuse it. 8 cams x 459 frames at 2x is
+# about 4 GB. Point `cache_dir` at scratch if <dat_dir> is on slow storage.
+#
+# Held-out VIEW (cam05) for val/test. The held-out SESSION is P1C2 -- evaluate on it by
+# pointing --dat_dir at .../data/P1C2 with the same config.
+dataset:
+  dat_dir: ???
+  frameset_type: dreams
+  scale: 2x                 # 1x 2048x1500 | 2x 1024x750 | 4x 512x375
+  resolution: 1             # keep 1: loadCam resizes the image but not the intrinsics
+  cameras_extent: 2.0
+  # cache_dir: /scratch/dreams_cache/P1C1
+  cache_workers: 8
+
+  # DREAMS ships a real 100-dim expression and a jaw pose. Zero them only if you intend
+  # to drive the face from a separate code (that is what DEGAS's ActorsHQ configs do).
+  # smplx_nofacial: exp+jaw
+
+  train:
+    frm_list: np.arange(0, 1836, 4).tolist()
+    cam_select: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+    mini_batch: 1
+
+  val:
+    frm_list: [900]
+    cam_select: [5]
+
+  test:
+    frm_list: np.arange(0, 1836, 128).tolist()
+    cam_select: [5]

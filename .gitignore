@@ -1,14 +1,35 @@
 *.pyc
 *.pyd
+__pycache__/
 *.egg-info/
-.vscode/
-output
+dist/
 build
-diff_rasterization/diff_rast.egg-info
-diff_rasterization/dist
+.vscode/
+
+output
+output-splatting/
 tensorboard_3d
 screenshots
+diff_rasterization/diff_rast.egg-info
+diff_rasterization/dist
+
+# datasets and decode caches -- never commit these
 data/
+_degas_cache/
+dreams_cache/
+
+# checkpoints and renders (a single DEGAS checkpoint.pt is ~1.3 GB)
+*.pt
+*.pth
+*.ckpt
+point_cloud/
+
+# body/face models -- licensed, download them yourself (see README "Setup")
+model/data/
 model/imavatar/FLAME2020/
 model/simple_phongsurf/3rdparty/
 model/smplx_utils/smplx_models/
+
+# DPE codes are large and regenerable
+dpe_codes/
+*.orig

@@ -1,0 +1,74 @@
+model:
+  with_vae_driver: true
+  
+  # overwrite resolution
+  base_mapper:
+    # set to 0 will disable
+    resolution: 512
+
+  pose_driver:
+    pose_mapper:
+      # set to 0 will disable
+      resolution: 512
+      mirror_verts_cond: false
+      
+    encoder:
+      # input resolution must be the same with ${model.pose_driver.pose_mapper.resolution}
+      input_resolution: ${model.pose_driver.pose_mapper.resolution}
+      # set to 0 will disable
+      n_embs: 1024
+      noise_std: 0.0  # not good to add noise
+      logvar_scale: 0.1
+      mirror_verts_cond: ${model.pose_driver.pose_mapper.mirror_verts_cond}
+      # set to 0 will disable
+      n_verts_enc_channels: 32
+
+    decoder:
+      # output uv_size must be the same with ${model.base_mapper.resolution}
+      uv_size: ${model.base_mapper.resolution}
+      init_uv_size: 64
+      n_pose_dims: ???
+      n_pose_enc_channels: 16
+      n_embs: ${model.pose_driver.encoder.n_embs}
+      n_embs_enc_channels: 32
+      n_verts_enc_channels: ${model.pose_driver.encoder.n_verts_enc_channels}
+      n_init_channels: 128   # conv decoder input channels
+      n_min_channels: 16
+
+      # face exp code from DPE https://github.com/OpenTalker/DPE
+      n_face_embs: 512
+
+      # triplane mlp for gaussian correction
+      corrections:
+        _xyz: 3
+        _features_dc: 3
+        _scaling: 3
+        _rotation: 4
+        _opacity: 1
+        _normal: 3
+        _specular: 3
+        _roughness: 1
+
+      # seperate branches for attributes
+      branches:
+        xyz_branch:
+          - _xyz
+        rotation_branch:
+          - _rotation
+          - _normal
+          - _scaling
+        color_branch:
+          - _features_dc
+          - _specular
+          - _roughness
+          - _opacity
+
+optim:
+  optim_pose_driver:
+    lr: 1e-4
+    # scheduler_args:
+    #   lr_init: 1e-4
+    #   lr_final: 1e-5
+    #   lr_delay_mult: 0.01
+    #   lr_max_steps: 40000
+

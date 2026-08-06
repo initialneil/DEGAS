@@ -1,0 +1,112 @@
+seed: 9061
+
+dataset:
+  dat_dir: ???
+  resolution: 1
+  data_device: cpu
+  frameset_type: color_frames
+  cameras_extent: 2.0
+  # smplx_njf_sap, smpl_params.npz, smplx_osx_nofacial
+  smplx_type: smplx_easymocap/smplx_all.pt
+  # reset facial params in smplx: exp, jaw, exp+jaw
+  smplx_nofacial: exp+jaw
+  mini_batch: 1
+  # with_depths: depths_vec
+  # face exp ablation: dpe_face, DAD-3DHeads
+  with_face_code: dpe_face
+  constrct_pca: true
+
+model:
+  sh_degree: 0 
+  num_init_samples: 100000
+  # max_n_gauss: 150000
+
+  # neutralize facial singal
+  smplx_nofacial: ${dataset.smplx_nofacial}
+
+  # pca
+  num_pca_comps: 20
+  sigma_pca: 2.0
+
+  # base xyz/quat/scaling on uv
+  base_mapper:
+    resolution: 1024
+
+  # degas_vae_driver.yaml
+  # degas_styleunet_driver.yaml
+  pose_driver: ???
+
+pipe:
+  convert_SHs_python: False
+  compute_cov3D_python: False
+  debug: False
+
+optim:
+  # degas_vae_driver.yaml
+  # degas_styleunet_driver.yaml
+  optim_pose_driver: ???
+
+  smplx_optim:
+    start_from_iter: 10000
+    optim_skip: 
+      - expression
+      - jaw_pose
+
+    lr: 1e-6
+    smplx_forward_transl: False
+    optim_betas: False
+    optim_v_template: False
+    
+  warm_up_xyz: 0
+
+  total_iteration: 800000
+  save_every_iter: ${int:${mul:${optim.total_iteration}, 0.1}}
+  testing_iterations: 
+    - 1000
+    - ${int:${mul:${optim.total_iteration}, 0.2}}
+    - ${int:${mul:${optim.total_iteration}, 0.5}}
+    - ${int:${mul:${optim.total_iteration}, 0.8}}
+    - ${optim.total_iteration}
+  validate_every_inter: 1000
+    
+  densify_from_iter: 0
+  densification_interval: 0
+  densify_until_iter: 0
+  opacity_reset_start_iter: 0
+  opacity_reset_interval: 0     # hard to learn
+  
+  size_threshold: 20
+  densify_grad_threshold: 0.0002
+  min_opacity: 0.005
+  min_scaling: 0.0001
+  
+  #lambda_rgb_mse: 10.0
+  lambda_ssim: 0.2
+  lambda_perceptual: 0.1
+  lambda_scaling_skew: 0.0
+
+  lambda_scaling_mse: 0.0
+
+  base_scaling_thresh: 10.0
+  lambda_base_scaling: 1.0
+
+  lambda_corrections_xyz: 0.001
+
+  # image weights anealing
+  #image_weights_anealing_steps: ${optim.densify_until_iter}
+  #image_weights_anealing_final: 0.5
+
+  # corrections
+  #lambda_corrections: 1.0
+  #correction_warpup_iter: 1000
+
+  #lambda_warped_cano: 0.1
+
+  #scheduler:
+  #  milestone: 2000
+  #  decay: 0.33
+
+
+
+
+

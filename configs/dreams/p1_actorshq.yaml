@@ -1,0 +1,36 @@
+# DREAMS-AVATAR P1C1 after scripts/dreams_to_actorshq.py, read by DEGAS's UNMODIFIED
+# ActorsHQ reader (dataset/actorshq_data.py). Nothing in this file is DREAMS-specific.
+#
+#   python scripts/dreams_to_actorshq.py --capture-dir data/P1C1 --out actorshq/P1C1 \
+#       --scale 2x --stride 4 --cams 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 5 \
+#       --smplx-model-dir /path/to/smplx --verify
+#   python degas_train.py --dat_dir actorshq/P1C1 \
+#       --configs configs/dreams/p1_actorshq.yaml,configs/degas_config.yaml,configs/degas_vae_driver.yaml
+#
+# cam_select is 1-BASED (ActorsHQ Cam001..); the reader subtracts 1. DREAMS cam00 is
+# Cam001, so the 0-based list above becomes the 1-based list below.
+#
+# smplx_type: smplx_dreams.pt is the LOSSLESS file the converter writes -- it keeps
+# flat_hand_mean=False and the 300/100 betas/expression sizes. smpl_params.npz is the
+# float-array-only compat file for readers that insist on npz; it folds hands_mean into
+# the hand poses and drops expression. Prefer the .pt.
+dataset:
+  dat_dir: ???
+  frameset_type: actorshq
+  scale: 2x
+  resolution: 1
+  cameras_extent: 2.0
+  smplx_type: smplx_dreams.pt
+
+  train:
+    frm_list: np.arange(0, 1836, 4).tolist()
+    cam_select: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31]
+    mini_batch: 1
+
+  val:
+    frm_list: [900]
+    cam_select: [6]
+
+  test:
+    frm_list: np.arange(0, 1836, 128).tolist()
+    cam_select: [6]

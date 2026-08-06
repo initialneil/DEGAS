@@ -1,0 +1,36 @@
+# ===== ARM A (v2): the REAL DEGAS baseline -- mesh face neutral, DPE drives the face =====
+# Supersedes p1_face_A.yaml, which left the DPE branch fed with constant zeros and was
+# therefore a static-face strawman rather than DEGAS's actual method.
+#
+# Same as arm A v1 on the mesh side -- SMPL-X expression and jaw are ZEROED, exactly as
+# DEGAS does -- but the 512-d face branch now receives REAL per-frame DPE enactment codes:
+#
+#   OpenTalker/DPE (CVPR 2023), Generator(size=256, style_dim=512, motion_dim=20)
+#     exp = mlp_exp( dir( mlp( enc.net_app(face_crop) ) ) )        -> (1,512)
+#   which is exactly the tensor `dec_exp` consumes, and exactly n_face_embs wide.
+#
+# Codes were extracted from cameras **07 and 30** (the two frontal TELE views that are in
+# the training set). The held-out evaluation camera **cam03 is deliberately NOT used**, so
+# no evaluation view leaks into the face conditioning. Two cameras per frame also gives
+# `load_face_dpe`'s random-convex-combination augmentation something real to mix.
+#
+# `with_face_dpe` is resolved by `load_face_dpe` against dat_dir when relative, and a
+# DIRECTORY is accepted -- it appends `dpe-multi-faces.zip` itself. `dpe` therefore points
+# at the codes DREAMS-AVATAR ships alongside each capture:
+#     <dat_dir>/dpe/dpe-multi-faces.zip   (+ dpe_meta.json recording cams / ref_frame / dim)
+# Pass an absolute path instead if you keep your codes outside the capture tree.
+dataset:
+  smplx_nofacial: exp+jaw
+  with_face_dpe: dpe
+
+model:
+  smplx_nofacial: exp+jaw
+
+optim:
+  smplx_optim:
+    # As in v1: `optim_skip` forces these to ZERO for the whole run (SMPLXOptimizer
+    # allocates zeros and only fills params_keys), which is the intent here -- the mesh
+    # face stays neutral and all facial signal must come through the DPE branch.
+    optim_skip:
+      - expression
+      - jaw_pose

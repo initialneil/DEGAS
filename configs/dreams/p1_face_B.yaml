@@ -1,0 +1,38 @@
+# ===== ARM B: DREAMS' fitted expression + jaw drive the SMPL-X mesh =====
+# The 100-dim expression and the jaw pose that Holistic-Multiview-Tracker fitted from
+# dense MediaPipe landmarks reach the mesh, so the posed SMPL-X geometry actually moves
+# its face. The VAE pose driver conditions on that posed geometry, so the appearance
+# network sees the expression too -- no new inputs, no architecture change.
+#
+# THREE settings have to agree, or the expression is silently discarded somewhere:
+#   1. dataset.smplx_nofacial: ''   -- else dataset_utils.reset_smplx_facial zeroes the
+#                                      tensors as they leave the reader.
+#   2. model.smplx_nofacial:   ''   -- else avatar_base.py:23-27 POPS expression/jaw_pose
+#                                      out of posed_params right before deforming, so the
+#                                      mesh is expression-free no matter what the reader
+#                                      handed over.
+#   3. optim.smplx_optim.optim_skip: []
+#                                   -- else the keys land in `forward_keys` but never in
+#                                      `params_keys`, and SMPLXOptimizer's zero-allocated
+#                                      tensors are never filled: "skip" means FORCED ZERO,
+#                                      not "frozen at the fit".
+# Use '' and not `false`: avatar_base does `'exp' in self.config.get('smplx_nofacial','')`,
+# and `'exp' in False` raises TypeError.
+#
+# With optim_skip empty, expression and jaw become optimisable like the other pose params
+# (from optim.smplx_optim.start_from_iter = 10000, lr 1e-6). That lr is small enough that
+# they stay essentially at the HMT fit while still being refinable.
+#
+# DPE: unchanged and inert in BOTH arms. DREAMS ships no DPE codes, so n_face_embs (512)
+# is fed constant zeros either way. It is deliberately left in place rather than switched
+# off, so A and B have byte-identical network architecture and the only difference is
+# whether the fitted face reaches the mesh.
+dataset:
+  smplx_nofacial: ''
+
+model:
+  smplx_nofacial: ''
+
+optim:
+  smplx_optim:
+    optim_skip: []

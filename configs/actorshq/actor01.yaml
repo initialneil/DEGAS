@@ -1,0 +1,24 @@
+dataset:
+  dat_dir: ???
+  frameset_type: actorshq
+  scale: 4x
+  # smplx_njf_sap, smpl_params.npz, smplx_osx_nofacial
+  smplx_type: smpl_params.npz
+  # reset facial params in smplx: exp, jaw, exp+jaw
+  smplx_nofacial: exp+jaw
+  # with_depths: depths_vec
+  with_face_dpe: dpe-codes.pt
+
+  train:
+    frm_list: np.arange(48, 2177).tolist()
+    cam_select: [4, 5, 6, 7, 20, 21, 22, 23, 36, 37, 38, 39, 52, 53, 54, 55, 76, 77, 78, 79, 92, 93, 94, 95, 108, 109, 110, 111, 125, 126, 130, 131, 134, 135, 138, 139, 142, 143, 146, 147, 150, 151, 154, 155, 158, 159]
+    mini_batch: 1
+
+  val:
+    frm_list: [710]
+    cam_select: [127]
+
+  test:
+    frm_list: np.arange(48, 548).tolist()
+    cam_select: [127]
+

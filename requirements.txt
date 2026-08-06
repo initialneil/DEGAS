@@ -1,0 +1,33 @@
+# DEGAS -- pip requirements.
+#
+# Versions are the ones the released avatars were actually trained with
+# (Python 3.11, CUDA 11.8, single 3090). Newer minors generally work; the
+# pins are here so a broken run can be bisected against a known-good set.
+#
+# NOT installable from this file, install these first (see README "Setup"):
+#   torch / torchvision   -- pick the build matching your CUDA
+#   pytorch3d             -- build from source or use the matching prebuilt wheel
+#   nvdiffrast            -- pip install git+https://github.com/NVlabs/nvdiffrast.git
+#   submodules/diff-gaussian-rasterization, submodules/simple-knn  (git submodules)
+
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.7.2
+scikit-image==0.24.0
+
+opencv-python==4.11.0.86
+imageio==2.34.1
+imageio-ffmpeg==0.6.0
+pillow==10.4.0
+matplotlib==3.5.3
+
+omegaconf==2.3.0
+tqdm==4.66.4
+plyfile==1.0.3
+trimesh==4.4.9
+libigl==2.5.0            # imported as `igl`
+fs==2.4.16               # load_face_dpe reads the DPE zip through a mem:// filesystem
+attrdict3==2.0.2         # imported as `attrdict` (ca_body)
+lpips==0.1.4
+pynvml==13.0.1           # degas_train.py --wait_for_gpu
+smplx==0.1.28

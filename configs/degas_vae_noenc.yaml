@@ -1,0 +1,13 @@
+model:
+  # overwrite resolution
+  base_mapper:
+    resolution: 512
+
+  pose_driver:
+    pose_mapper:
+      resolution: 0
+
+    encoder:
+      n_embs: 0
+      n_verts_enc_channels: 0
+      

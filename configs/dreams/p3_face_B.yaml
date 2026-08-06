@@ -1,0 +1,30 @@
+# ===== ARM B (P3C1): DREAMS' fitted expression + jaw drive the SMPL-X mesh =====
+# Byte-identical in intent to configs/dreams/p1_face_B.yaml -- the adopted method, which
+# beat real-DPE on P1's held-out mouth. It carries no capture-specific path (the three
+# switches below are pure model/optimiser settings), so this file is a copy; it exists
+# per subject only so that nothing in the P3 runs can silently reach for a P1 config.
+#
+# THREE settings have to agree, or the expression is silently discarded somewhere:
+#   1. dataset.smplx_nofacial: ''   -- else dataset_utils.reset_smplx_facial zeroes the
+#                                      tensors as they leave the reader.
+#   2. model.smplx_nofacial:   ''   -- else avatar_base.py:23-27 POPS expression/jaw_pose
+#                                      out of posed_params right before deforming.
+#   3. optim.smplx_optim.optim_skip: []
+#                                   -- "skip" means FORCED ZERO, not "frozen at the fit":
+#                                      the keys would land in forward_keys but never in
+#                                      params_keys, and SMPLXOptimizer's zero-allocated
+#                                      tensors would never be filled.
+# Use '' and not `false`: avatar_base does `'exp' in self.config.get('smplx_nofacial','')`,
+# and `'exp' in False` raises TypeError.
+#
+# DPE stays wired but inert (n_face_embs = 512 fed constant zeros), exactly as in P1's arm
+# B, so this run's architecture is identical to the arm-A/arm-B pair it is compared with.
+dataset:
+  smplx_nofacial: ''
+
+model:
+  smplx_nofacial: ''
+
+optim:
+  smplx_optim:
+    optim_skip: []
