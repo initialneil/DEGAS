@@ -220,6 +220,20 @@ ActorsHQ tree if you would rather feed some other codebase.
 
 This is the one real decision, and the repo supports both answers.
 
+**Which one to pick, from the one comparison we ran.** On P1, with identical data, schedule
+and architecture, driving the mesh with the fitted SMPL-X expression (Option A) **beat** the
+real-DPE path (Option B). That is why the released `*_smplx` avatars use Option A. Option B
+is the formulation in the paper, not the one that won here, and it is the right choice when
+you have no trustworthy face fit.
+
+Two caveats on that result, because it is a single subject and it is easy to over-read.
+First, whole-image and even head-crop metrics could not tell the two apart at all: the
+differences sat in the fourth decimal. Only a mouth region defined from the jaw-driven
+SMPL-X vertices separated them (PSNR +0.58, SSIM +0.015, LPIPS -10%). A face ablation moves
+about 1% of the pixels, so if you benchmark this yourself, whole-image PSNR will tell you
+nothing. Second, Option A fixes the mouth *aperture*, not its *interior*: there is no
+oral-cavity geometry and densification is off, so teeth render as a specular smear.
+
 #### Option A: SMPL-X expression and jaw (default in `configs/dreams/`)
 
 The fitted 100-dim expression and jaw pose reach the mesh, so the posed SMPL-X geometry
@@ -290,6 +304,24 @@ Two choices in that command are load-bearing:
   (`dpe-{frame:06d}-cam{cc:02d}.pt`), and `load_face_dpe` concatenates the per-camera codes
   for a frame and samples a random convex combination each iteration. One camera leaves
   that augmentation with nothing to mix.
+
+Three more properties of this path that are easy to be surprised by:
+
+- **The face crop is a FIXED box, not per-frame tracking.** S3FD detects once on a
+  reference frame, the box is padded by 50 px per side, and that box is then reused
+  unchanged for the whole sequence. This is not a shortcut here, it is what DPE's own
+  `crop_video.py` does. The consequence is real: a subject who moves substantially out of
+  that box degrades, and nothing re-detects to save you.
+- **The reference frame defaults to mid-sequence** (`frames[len // 2]`), not frame 0, which
+  is where P1C1's 918 comes from. No capture used a hand-picked reference. It is recorded
+  per capture as `ref_frame` in `dpe_meta.json`, and the resulting box as
+  `stats.<cam>.box`, so every published code set is reproducible from its own metadata.
+- **The camera mix is stochastic, and it runs at eval time too.** `__getitem__` draws
+  `w ~ U(0,1)^N`, normalises it, and returns `einsum('i,ij->j', w, codes)`, redrawn on
+  every sample. That is deliberate augmentation during training, but the same code path
+  runs during evaluation, so a DPE-arm evaluation is **not deterministic** across cameras.
+  If you need reproducible numbers, restrict the eval to a single camera per frame; that
+  is the knob.
 
 Then check the codes are worth 40 h of GPU before spending it:
 
