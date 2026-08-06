@@ -414,14 +414,11 @@ tools/
 ## Citation
 If you find our code or paper useful, please cite as:
 ```
-@misc{shao2024degas,
-  title={DEGAS: Detailed Expressions on Full-Body Gaussian Avatars}, 
-  author={Zhijing Shao and Duotun Wang and Qing-Yao Tian and Yao-Dong Yang and Hengyu Meng and Zeyu Cai and Bo Dong and Yu Zhang and Kang Zhang and Zeyu Wang},
-  year={2024},
-  eprint={2408.10588},
-  archivePrefix={arXiv},
-  primaryClass={cs.CV},
-  url={https://arxiv.org/abs/2408.10588}, 
+@inproceedings{shao2025degas,
+  title = {{DEGAS: Detailed Expressions on Full-Body Gaussian Avatars}},
+  author = {Zhijing Shao and Duotun Wang and Qing-Yao Tian and Yao-Dong Yang and Hengyu Meng and Zeyu Cai and Bo Dong and Yu Zhang and Kang Zhang and Zeyu Wang},
+  booktitle = {Proceedings of the International Conference on 3D Vision (3DV)},
+  year = {2025}
 }
 ```
 
