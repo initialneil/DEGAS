@@ -127,9 +127,13 @@ Three things are worth knowing, because each one fails quietly rather than loudl
    P1C1's frame 110 for P1C2's frame 110. `dataset/dreams_data.py` stamps a `capture.txt`
    into every cache dir and refuses a mismatch, so this fails loudly rather than producing
    believable nonsense, but only if you keep them separate.
-3. **For a DPE avatar, override `dataset.with_face_dpe` to the capture you are driving
-   with.** The saved config points at the *training* session's codes; leaving it alone
-   would drive a P1C2 render with P1C1's expressions.
+3. **For a DPE avatar, make sure `dataset.with_face_dpe` points at the session you are
+   driving with**, not the one the avatar was trained on. The published avatars store it
+   as the *relative* value `dpe`, and `load_face_dpe` resolves relative paths against
+   `dat_dir`, so they follow `--dat_dir` on their own and pick up the right codes. A config
+   saved by your own training run holds an **absolute** path to the training session's
+   codes instead, and there you must override it, or you will render one session's poses
+   with another session's expressions.
 
 So the `P1_dpe` avatar on the same held-out session is:
 
@@ -146,6 +150,16 @@ python degas_eval.py \
     "dataset.test.frm_list=np.arange(0, 293, 8).tolist()" \
     dataset.with_face_dpe=DREAMS-AVATAR/data/P1C2/dpe/dpe-multi-faces.zip
 ```
+
+The last line is belt-and-braces here: the published `P1_dpe` would already resolve `dpe`
+against `--dat_dir` and find P1C2's codes. State it anyway, so the command stays correct if
+you point it at an avatar you trained yourself.
+
+The `--configs` chain is worth one note. `degas_eval.py` requires it, and it is the same
+chain you would train with, but the run's own `config.yaml` is merged *after* it, so the
+face settings in `p1_face_B.yaml` / `p1_face_A_dpe.yaml` are already implied by the avatar.
+Passing the matching one keeps the command honest and self-documenting; passing the *wrong*
+one does not silently change how the avatar is driven.
 
 
 ## Re-training on DREAMS-AVATAR
