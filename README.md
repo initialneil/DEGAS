@@ -102,14 +102,20 @@ hf download initialneil/DREAMS-AVATAR --repo-type dataset \
     --include "data/P1C2/*" --local-dir DREAMS-AVATAR
 
 python degas_eval.py \
-    --dat_dir DREAMS-AVATAR/data/P1C2 \
+    --dat_dir "$PWD/DREAMS-AVATAR/data/P1C2" \
     --ip none \
-    --model_path weights/avatars/P1_smplx \
+    --model_path "$PWD/weights/avatars/P1_smplx" \
     --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_train_base.yaml,configs/dreams/p1_face_B.yaml \
-    dataset.cache_dir=cache/P1C2_eval_cam3 \
+    dataset.cache_dir="$PWD/cache/P1C2_eval_cam3" \
     dataset.test.cam_select=[3] \
     "dataset.test.frm_list=np.arange(0, 293, 8).tolist()"
 ```
+
+> **`--model_path` must be absolute.** `degas_eval.py` treats a relative `--model_path` as
+> being *inside* `--dat_dir` (`os.path.join(dat_dir, model_path)`), because that is where a
+> training run writes its output by default. Passing `weights/avatars/P1_smplx` therefore
+> looks for it under the capture directory and fails with a confusing `FileNotFoundError`
+> on a path you never typed. Hence `$PWD` above.
 
 Renders, ground truth and `stats.json` land in `weights/avatars/P1_smplx/eval_<iteration>/`.
 
@@ -141,14 +147,14 @@ So the `P1_dpe` avatar on the same held-out session is:
 hf download initialneil/DEGAS --include "avatars/P1_dpe/*" --local-dir weights
 
 python degas_eval.py \
-    --dat_dir DREAMS-AVATAR/data/P1C2 \
+    --dat_dir "$PWD/DREAMS-AVATAR/data/P1C2" \
     --ip none \
-    --model_path weights/avatars/P1_dpe \
+    --model_path "$PWD/weights/avatars/P1_dpe" \
     --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_train_base.yaml,configs/dreams/p1_face_A_dpe.yaml \
-    dataset.cache_dir=cache/P1C2_eval_cam3 \
+    dataset.cache_dir="$PWD/cache/P1C2_eval_cam3" \
     dataset.test.cam_select=[3] \
     "dataset.test.frm_list=np.arange(0, 293, 8).tolist()" \
-    dataset.with_face_dpe=DREAMS-AVATAR/data/P1C2/dpe/dpe-multi-faces.zip
+    dataset.with_face_dpe="$PWD/DREAMS-AVATAR/data/P1C2/dpe/dpe-multi-faces.zip"
 ```
 
 The last line is belt-and-braces here: the published `P1_dpe` would already resolve `dpe`
