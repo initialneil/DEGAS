@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | Training / evaluation code | this repo | available |
 | Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | P1 available, P2/P3/P4 uploading as they finish |
-| DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures with SMPL-X; DPE codes for the 8 P1-P4 captures |
+| DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures, SMPL-X **and** DPE codes for all of them |
 | Multiview SMPL-X registration | [Holistic-Multiview-Tracker](https://github.com/initialneil/Holistic-Multiview-Tracker) | available |
 
 - [Setup](#setup)
