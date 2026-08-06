@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | Training / evaluation code | this repo | available |
 | Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | P1 available, P2/P3/P4 uploading as they finish |
-| Multiview SMPL-X registration | Holistic-Multiview-Tracker | release pending |
+| Multiview SMPL-X registration | our multiview SMPL-X registration | release pending |
 | DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures, SMPL-X **and** DPE codes for all of them |
 
 - [Setup](#setup)
@@ -105,17 +105,26 @@ python degas_eval.py \
     --dat_dir "$PWD/DREAMS-AVATAR/data/P1C2" \
     --ip none \
     --model_path "$PWD/weights/avatars/P1_smplx" \
-    --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_train_base.yaml,configs/dreams/p1_face_B.yaml \
+    --configs "$PWD/weights/avatars/P1_smplx/config.yaml" \
     dataset.cache_dir="$PWD/cache/P1C2_eval_cam3" \
     dataset.test.cam_select=[3] \
     "dataset.test.frm_list=np.arange(0, 293, 8).tolist()"
 ```
 
-> **`--model_path` must be absolute.** `degas_eval.py` treats a relative `--model_path` as
-> being *inside* `--dat_dir` (`os.path.join(dat_dir, model_path)`), because that is where a
-> training run writes its output by default. Passing `weights/avatars/P1_smplx` therefore
-> looks for it under the capture directory and fails with a confusing `FileNotFoundError`
-> on a path you never typed. Hence `$PWD` above.
+> **You pass the avatar's config yourself.** `degas_eval.py` does **not** read the run's
+> `config.yaml` behind your back. It used to append it last, which meant a value baked in at
+> training time silently outranked whatever you typed on the command line. Now what you pass
+> is what you get, and you choose the order. Each published avatar ships a portable
+> `config.yaml` (`dat_dir: ???`, no machine-specific paths) that is fully self-contained, so
+> naming it alone is enough; put it last if you also pass base configs. If something required
+> is missing, the run stops immediately and names the exact keys rather than failing later
+> inside the model.
+
+> **`--model_path` must be absolute.** A relative `--model_path` is resolved *inside*
+> `--dat_dir` (`os.path.join(dat_dir, model_path)`), because that is where a training run
+> writes its output by default. Passing `weights/avatars/P1_smplx` therefore looks for it
+> under the capture directory and fails with a `FileNotFoundError` on a path you never
+> typed. Hence `$PWD` above.
 
 Renders, ground truth and `stats.json` land in `weights/avatars/P1_smplx/eval_<iteration>/`.
 
@@ -125,9 +134,10 @@ subject* is a cross-session drive, which is how the held-out numbers are produce
 
 Three things are worth knowing, because each one fails quietly rather than loudly:
 
-1. **`degas_eval.py` appends the run's saved `config.yaml` last**, so an avatar is always
-   evaluated under its own face setting. Only CLI overrides outrank it, which is why the
-   test split above is set on the command line.
+1. **Pass the avatar's own `config.yaml`**, or it is not evaluated under the settings it
+   was trained with. Nothing is read from the run directory implicitly. Command-line
+   `key=value` overrides still outrank every config file, which is why the test split above
+   is set that way.
 2. **Give each capture its own `dataset.cache_dir`.** Decoded frames are named
    `cam%02d/%08d.jpg` with no capture in the path, so a shared cache would otherwise serve
    P1C1's frame 110 for P1C2's frame 110. `dataset/dreams_data.py` stamps a `capture.txt`
@@ -150,7 +160,7 @@ python degas_eval.py \
     --dat_dir "$PWD/DREAMS-AVATAR/data/P1C2" \
     --ip none \
     --model_path "$PWD/weights/avatars/P1_dpe" \
-    --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_train_base.yaml,configs/dreams/p1_face_A_dpe.yaml \
+    --configs "$PWD/weights/avatars/P1_dpe/config.yaml" \
     dataset.cache_dir="$PWD/cache/P1C2_eval_cam3" \
     dataset.test.cam_select=[3] \
     "dataset.test.frm_list=np.arange(0, 293, 8).tolist()" \
@@ -161,11 +171,12 @@ The last line is belt-and-braces here: the published `P1_dpe` would already reso
 against `--dat_dir` and find P1C2's codes. State it anyway, so the command stays correct if
 you point it at an avatar you trained yourself.
 
-The `--configs` chain is worth one note. `degas_eval.py` requires it, and it is the same
-chain you would train with, but the run's own `config.yaml` is merged *after* it, so the
-face settings in `p1_face_B.yaml` / `p1_face_A_dpe.yaml` are already implied by the avatar.
-Passing the matching one keeps the command honest and self-documenting; passing the *wrong*
-one does not silently change how the avatar is driven.
+On `--configs`: each published avatar's `config.yaml` is a fully resolved dump of the
+config it was trained with (model, optimiser, pipeline, splits), so naming it on its own is
+enough. You can instead build the chain from `configs/` by hand, the same way you would for
+training; merging is last-wins, so put the avatar's config last if you want it to decide.
+Whatever you leave out is simply not set, and `degas_eval.py` stops up front and names any
+required key that is missing rather than failing deep inside the model.
 
 
 ## Re-training on DREAMS-AVATAR
@@ -217,13 +228,15 @@ one process; `degas_eval.py` scores a run on a held-out split.
 ### 1. Multiview capture to SMPL-X
 
 DEGAS drives everything from a registered SMPL-X sequence, so the first step is fitting
-SMPL-X to your multiview capture. DREAMS-AVATAR's registration was produced by
-**Holistic-Multiview-Tracker**, which fits body, hands and face jointly from dense
-multiview landmarks and writes the per-frame SMPL-X parameters this repo consumes.
-**That tracker is not released yet**, so for now this step is yours to supply: any fitter
-that produces per-frame SMPL-X in the DREAMS-AVATAR convention will work, and the dataset
-card documents that convention precisely. If you only want to *train on* DREAMS-AVATAR, you
-do not need a fitter at all, the registration ships with the data.
+SMPL-X to your multiview capture. DREAMS-AVATAR's registration came from our own multiview
+tracker, which fits body, hands and face jointly from dense multiview landmarks and writes
+the per-frame SMPL-X parameters this repo consumes. **That tracker's release is pending**,
+so for now this step is yours to supply: any fitter that produces per-frame SMPL-X in the
+DREAMS-AVATAR convention will work, and
+[the dataset card](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR#smplxnpz)
+documents that convention precisely, down to the tensor shapes and the world convention.
+If you only want to *train on* DREAMS-AVATAR, you need no fitter at all: the registration
+ships with the data.
 
 Arrange the result as a DREAMS-AVATAR capture (`cameras.json`, `capture.json`,
 `smplx.npz`, `videos/camNN.mp4`) and `frameset_type: dreams` reads it directly.
