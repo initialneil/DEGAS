@@ -19,12 +19,10 @@
 | Training / evaluation code | this repo | available |
 | Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | P1 available, P2/P3/P4 uploading as they finish |
 | DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures, SMPL-X **and** DPE codes for all of them |
-| Multiview SMPL-X registration | Holistic-Multiview-Tracker | **release pending** |
 
 - [Setup](#setup)
 - [Quick inference](#quick-inference-with-pretrained-avatars)
 - [Re-training on DREAMS-AVATAR](#re-training-on-dreams-avatar)
-- [Train your own avatar](#train-your-own-avatar)
 - [Repository layout](#repository-layout)
 
 
@@ -85,7 +83,7 @@ avatars/<NAME>/point_cloud/iteration_800000/{checkpoint.pt, point_cloud.ply, smp
 
 | Avatar | Trained on | Face driven by |
 | --- | --- | --- |
-| `P1_smplx` | P1C1 | SMPL-X expression + jaw, fitted by Holistic-Multiview-Tracker |
+| `P1_smplx` | P1C1 | SMPL-X expression + jaw, from our multiview SMPL-X registration |
 | `P1_dpe` | P1C1 | a per-frame 512-d DPE code, mesh face neutralised |
 | `P2_smplx`, `P3_smplx`, `P4_smplx` | P2C1 / P3C1 / P4C1 | SMPL-X expression + jaw (*uploading as training finishes*) |
 
@@ -200,160 +198,22 @@ confounded by a data difference:
   held-out session. `p1_train_base.yaml` trains on all 1836 frames of P1C1 across 29
   cameras at `2x` (1024x750), and holds out **cam03** (a tele camera, the frontal face
   closeup) plus the whole **P1C2** session.
-- `pN_face_*.yaml` changes **only** how the face is driven (next section).
+- `pN_face_*.yaml` changes **only** how the face is driven.
+
+**Two face options, and you pick one per run.** `pN_face_B.yaml` lets DREAMS-AVATAR's
+fitted SMPL-X expression and jaw drive the mesh; this is what the released `*_smplx`
+avatars use. `p1_face_A_dpe.yaml` instead neutralises the mesh face and drives it from the
+per-frame 512-d DPE codes that DREAMS-AVATAR publishes alongside each capture, which is the
+paper's formulation. The dataset card's
+[Driving the face](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR#driving-the-face-smpl-x-expression-or-dpe-codes)
+section explains both, including how the codes were generated and which driving sequences
+are expressive enough to be worth using. `scripts/extract_dpe_codes.py` regenerates codes
+for a capture, and `tools/` holds the preflight checks that catch a silently static face
+before it costs you a training run.
 
 Training runs to 800k iterations, roughly 41 h on one 3090, checkpointing every 25k. Use
 `--is_continue` (the default) to resume. `degas_train_multi.py` trains several captures in
 one process; `degas_eval.py` scores a run on a held-out split.
-
-
-## Train your own avatar
-
-### 1. Multiview capture to SMPL-X
-
-DEGAS drives everything from a registered SMPL-X sequence, so the first step is fitting
-SMPL-X to your multiview capture. DREAMS-AVATAR's registration was produced by
-**Holistic-Multiview-Tracker**, which fits body, hands and face jointly from dense
-multiview landmarks and writes the per-frame SMPL-X parameters this repo consumes.
-**That tracker is not released yet**, so for now this step is yours to supply: any fitter
-that produces per-frame SMPL-X in the DREAMS-AVATAR convention will work, and the dataset
-card documents that convention precisely. If you only want to *train on* DREAMS-AVATAR, you
-do not need a fitter at all, the registration ships with the data.
-
-Arrange the result as a DREAMS-AVATAR capture (`cameras.json`, `capture.json`,
-`smplx.npz`, `videos/camNN.mp4`) and `frameset_type: dreams` reads it directly.
-[`scripts/dreams_to_actorshq.py`](scripts/dreams_to_actorshq.py) converts a capture into an
-ActorsHQ tree if you would rather feed some other codebase.
-
-### 2. Choose how the face is driven
-
-This is the one real decision, and the repo supports both answers.
-
-**Which one to pick, from the one comparison we ran.** On P1, with identical data, schedule
-and architecture, driving the mesh with the fitted SMPL-X expression (Option A) **beat** the
-real-DPE path (Option B). That is why the released `*_smplx` avatars use Option A. Option B
-is the formulation in the paper, not the one that won here, and it is the right choice when
-you have no trustworthy face fit.
-
-Two caveats on that result, because it is a single subject and it is easy to over-read.
-First, whole-image and even head-crop metrics could not tell the two apart at all: the
-differences sat in the fourth decimal. Only a mouth region defined from the jaw-driven
-SMPL-X vertices separated them (PSNR +0.58, SSIM +0.015, LPIPS -10%). A face ablation moves
-about 1% of the pixels, so if you benchmark this yourself, whole-image PSNR will tell you
-nothing. Second, Option A fixes the mouth *aperture*, not its *interior*: there is no
-oral-cavity geometry and densification is off, so teeth render as a specular smear.
-
-#### Option A: SMPL-X expression and jaw (default in `configs/dreams/`)
-
-The fitted 100-dim expression and jaw pose reach the mesh, so the posed SMPL-X geometry
-actually moves its face. The VAE pose driver conditions on that posed geometry, so the
-appearance network sees the expression too. No new inputs, no architecture change. This is
-`pN_face_B.yaml`, and it is what the `*_smplx` released avatars use.
-
-Three settings have to agree or the expression is silently discarded somewhere:
-
-```yaml
-dataset:  {smplx_nofacial: ''}              # else reset_smplx_facial zeroes it at the reader
-model:    {smplx_nofacial: ''}              # else avatar_base pops it out before deforming
-optim:    {smplx_optim: {optim_skip: []}}   # "skip" means FORCED ZERO, not "frozen at the fit"
-```
-
-Use `''`, not `false`: `avatar_base` does `'exp' in config.get('smplx_nofacial', '')`, and
-`'exp' in False` raises `TypeError`. A run with any one of these left at the default trains
-happily for three days and produces a static face, so check it in 30 seconds first:
-
-```bash
-python tools/preflight_face_arms.py --dat_dir DREAMS-AVATAR/data/P1C1 --frames 944 903 750
-```
-
-#### Option B: neutral mesh face plus a DPE expression code
-
-This is the paper's formulation, and it is the option to take when your face fit is not
-trustworthy, or when you want to drive the face from something other than SMPL-X. In plain
-terms:
-
-1. **Neutralize the mesh's face.** Set `smplx_nofacial: exp+jaw` (in *both* `dataset` and
-   `model`) and `optim_skip: [expression, jaw_pose]`. The SMPL-X expression and jaw are
-   forced to zero for the whole run, so the mesh carries pose and identity but no facial
-   motion at all.
-2. **Drive the face with a per-frame DPE expression code instead.** A 512-d code from
-   [OpenTalker/DPE](https://github.com/OpenTalker/DPE) is fed to the decoder's
-   `n_face_embs` branch each frame. 512 is exactly `n_face_embs`, so nothing is reshaped,
-   padded or projected anywhere.
-
-That is `configs/dreams/p1_face_A_dpe.yaml`, and it is what the `P1_dpe` released avatar
-uses.
-
-**Generating the codes.** [`scripts/extract_dpe_codes.py`](scripts/extract_dpe_codes.py)
-produces them in the form the loader expects:
-
-```bash
-git clone https://github.com/OpenTalker/DPE && export DPE_ROOT=$PWD/DPE
-# download DPE's pretrained dpe.pt into $DPE_ROOT/checkpoints/
-
-python scripts/extract_dpe_codes.py \
-    --capture DREAMS-AVATAR/data/P1C1 \
-    --cams 7 30 \
-    --out DREAMS-AVATAR/data/P1C1/dpe
-```
-
-The code is `mlp_exp(dir(mlp(enc(face_crop))))`, traced through DPE's `Generator(size=256,
-style_dim=512, motion_dim=20)`. That is the exact tensor DPE's own `dec_exp` consumes, so
-it carries expression and nothing else. `enc.net_app` takes one image, so the code is an
-absolute per-frame function: there is no source or reference frame to choose, and no
-convention to get wrong. The face box comes from S3FD on one reference frame, expanded by
-50 px, then held fixed for the sequence, which is what DPE's own `crop_video.py` does.
-
-Two choices in that command are load-bearing:
-
-- **Use frontal cameras that are in the training split.** P1 used cam07 and cam30, both
-  frontal tele views. Never pass a held-out evaluation camera: its pixels would leak into
-  the face conditioning and the evaluation would flatter itself.
-- **Use more than one camera.** The output zip is keyed by frame id
-  (`dpe-{frame:06d}-cam{cc:02d}.pt`), and `load_face_dpe` concatenates the per-camera codes
-  for a frame and samples a random convex combination each iteration. One camera leaves
-  that augmentation with nothing to mix.
-
-Three more properties of this path that are easy to be surprised by:
-
-- **The face crop is a FIXED box, not per-frame tracking.** S3FD detects once on a
-  reference frame, the box is padded by 50 px per side, and that box is then reused
-  unchanged for the whole sequence. This is not a shortcut here, it is what DPE's own
-  `crop_video.py` does. The consequence is real: a subject who moves substantially out of
-  that box degrades, and nothing re-detects to save you.
-- **The reference frame defaults to mid-sequence** (`frames[len // 2]`), not frame 0, which
-  is where P1C1's 918 comes from. No capture used a hand-picked reference. It is recorded
-  per capture as `ref_frame` in `dpe_meta.json`, and the resulting box as
-  `stats.<cam>.box`, so every published code set is reproducible from its own metadata.
-- **The camera mix is stochastic, and it runs at eval time too.** `__getitem__` draws
-  `w ~ U(0,1)^N`, normalises it, and returns `einsum('i,ij->j', w, codes)`, redrawn on
-  every sample. That is deliberate augmentation during training, but the same code path
-  runs during evaluation, so a DPE-arm evaluation is **not deterministic** across cameras.
-  If you need reproducible numbers, restrict the eval to a single camera per frame; that
-  is the knob.
-
-Then check the codes are worth 40 h of GPU before spending it:
-
-```bash
-python tools/validate_dpe_codes.py \
-    --capture DREAMS-AVATAR/data/P1C1 --codes DREAMS-AVATAR/data/P1C1/dpe
-
-python tools/probe_face_embs.py --dat_dir DREAMS-AVATAR/data/P1C1 \
-    --configs configs/degas_config.yaml,configs/degas_vae_driver.yaml,configs/dreams/p1_train_base.yaml,configs/dreams/p1_face_A_dpe.yaml
-```
-
-`validate_dpe_codes.py` asks whether the codes are non-degenerate, whether they separate
-open-mouth from closed-mouth frames, and whether they track expression rather than head
-pose in disguise. `probe_face_embs.py` hooks the layer that consumes the code and reports
-what it actually received, because `degas_vae_driver.py` substitutes constant zeros when no
-code arrives. That substitution is silent: a run with a misconfigured DPE path looks
-completely healthy for three days and produces a frozen face.
-
-### 3. Train
-
-Write a `pN_train_base.yaml` for your capture (copy `configs/dreams/p1_train_base.yaml` and
-change the splits), pick a face config, and run the `degas_train.py` command from the
-previous section.
 
 
 ## Repository layout
