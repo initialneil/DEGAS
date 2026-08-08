@@ -17,7 +17,7 @@
 | What | Where | Status |
 | --- | --- | --- |
 | Training / evaluation code | this repo | available |
-| Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | P1 available, P2/P3/P4 uploading as they finish |
+| Pretrained avatars | [huggingface.co/initialneil/DEGAS](https://huggingface.co/initialneil/DEGAS) | all 5 available |
 | Multiview SMPL-X registration | our multiview SMPL-X registration | release pending |
 | DREAMS-AVATAR dataset | [huggingface.co/datasets/initialneil/DREAMS-AVATAR](https://huggingface.co/datasets/initialneil/DREAMS-AVATAR) | 10 captures, SMPL-X **and** DPE codes for all of them |
 
@@ -87,7 +87,15 @@ avatars/<NAME>/point_cloud/iteration_800000/{checkpoint.pt, point_cloud.ply, smp
 | --- | --- | --- |
 | `P1_smplx` | P1C1 | SMPL-X expression + jaw, from our multiview SMPL-X registration |
 | `P1_dpe` | P1C1 | a per-frame 512-d DPE code, mesh face neutralised |
-| `P2_smplx`, `P3_smplx`, `P4_smplx` | P2C1 / P3C1 / P4C1 | SMPL-X expression + jaw (*uploading as training finishes*) |
+| `P2_smplx` | P2C1 | SMPL-X expression + jaw |
+| `P3_smplx` | P3C1 | SMPL-X expression + jaw |
+| `P4_smplx` | P4C1 | SMPL-X expression + jaw |
+
+All five are trained to 800k. Per-avatar held-out numbers, on both an unseen view and an
+unseen session, are in the
+[model card](https://huggingface.co/initialneil/DEGAS#held-out-numbers). There is no `P5` or
+`P6` avatar: those subjects have no `C1` session to train on, and ship only as
+cross-reenactment drivers.
 
 Fetch one avatar and the session you want to drive it with, then render:
 
